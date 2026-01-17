@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WeStarts Global Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00d2ff; --accent: #FF9F0A; --bg: #050505;
+            --card: rgba(255, 255, 255, 0.05); --text: #ffffff;
+            --font-main: 'Tajawal', sans-serif; --font-nums: 'Inter', sans-serif;
+        }
+        * { box-sizing: border-box; font-family: var(--font-main); -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background-color: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            height: 100vh; 
+            height: 100dvh; 
+            overflow: hidden; 
+            display: flex; 
+            justify-content: center; 
+        }
+
+        .app-container { width: 100%; max-width: 480px; height: 100%; display: flex; flex-direction: column; position: relative; }
+        
+        .header { padding: 25px 20px 10px; text-align: center; }
+        .header h2 { 
+            margin: 0 0 12px 0; font-size: 1.8rem; font-weight: 800; 
+            background: linear-gradient(45deg, #00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-family: var(--font-nums);
+        }
+
+        .search-wrapper {
+            background: rgba(255, 255, 255, 0.07); border-radius: 12px; padding: 10px 15px;
+            display: flex; align-items: center; border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .search-wrapper input { background: transparent; border: none; color: white; width: 100%; outline: none; font-size: 0.9rem; }
+
+        .currency-list { flex: 1; overflow-y: auto; padding: 10px 15px 120px; scroll-behavior: smooth; }
+        .currency-list::-webkit-scrollbar { width: 0; }
+
+        .currency-card {
+            background: var(--card); margin-bottom: 8px; padding: 12px 16px; border-radius: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.03); transition: 0.2s;
+        }
+        .currency-card.active { border-color: var(--primary); background: rgba(0, 210, 255, 0.1); }
+        
+        .info { display: flex; align-items: center; gap: 12px; }
+        .flag-capsule { width: 42px; height: 28px; border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: #111; }
+        .flag-img { width: 100%; height: 100%; object-fit: cover; }
+
+        .meta { display: flex; flex-direction: column; text-align: right; }
+        .meta .code { font-family: var(--font-nums); font-weight: 700; font-size: 0.95rem; color: #eee; }
+        .meta .name { font-size: 0.75rem; color: #888; }
+        .value { font-family: var(--font-nums); font-size: 1.25rem; font-weight: 600; color: var(--primary); }
+
+        /* تعديل زر الحاسبة العائم */
+        .fab-keyboard {
+            position: absolute; 
+            bottom: 40px; /* تم رفعه قليلاً */
+            left: 20px; 
+            width: 65px; 
+            height: 65px;
+            background: var(--primary); 
+            border-radius: 50%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.4); 
+            z-index: 900; 
+            cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        /* تحسين لوحة الحاسبة */
+        .calc-sheet {
+            position: absolute; 
+            bottom: -100%; 
+            left: 0; 
+            width: 100%; 
+            background: rgba(15, 15, 18, 0.98); 
+            backdrop-filter: blur(25px);
+            padding: 20px 20px 40px; 
+            border-radius: 30px 30px 0 0;
+            transition: 0.5s cubic-bezier(0.1, 0.7, 0.1, 1); 
+            z-index: 1000;
+            border-top: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+        }
+        .calc-sheet.show { bottom: 0; }
+
+        .calc-display {
+            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;
+            text-align: left; margin-bottom: 15px; min-height: 60px;
+            font-family: var(--font-nums); font-size: 1.8rem; color: var(--primary); 
+            display: flex; align-items: center; justify-content: flex-end;
+        }
+
+        .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .keypad button {
+            height: 62px; border-radius: 16px; border: none; font-family: var(--font-nums);
+            font-size: 1.5rem; font-weight: 600; color: white; background: #252528;
+            transition: background 0.2s;
+        }
+        .keypad button:active { background: #444; }
+        .btn-op { background: var(--accent) !important; color: #000 !important; }
+        .btn-ac { background: #ff453a !important; }
+
+        #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div id="loader">
+    <div style="width: 45px; height: 45px; border: 4px solid #111; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+</div>
+
+<div class="app-container">
+    <div class="header">
+        <h2>WeStarts</h2>
+        <div class="search-wrapper">
+            <input type="text" id="search" placeholder="ابحث عن دولة أو عملة..." oninput="filterList()" onfocus="toggleCalc(false)">
+        </div>
+    </div>
+    
+    <div class="currency-list" id="list"></div>
+
+    <div class="fab-keyboard" onclick="toggleCalc(true)">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="12" y1="8" x2="12" y2="16"></line>
+            <line x1="8" y1="12" x2="16" y2="12"></line>
+        </svg>
+    </div>
+
+    <div class="calc-sheet" id="calcSheet">
+        <div style="width: 40px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 0 auto 15px; cursor: pointer;" onclick="toggleCalc(false)"></div>
+        <div class="calc-display" id="display">0</div>
+        <div class="keypad">
+            <button class="btn-ac" onclick="calcAction('AC')">AC</button>
+            <button style="background:#444" onclick="calcAction('DEL')">⌫</button>
+            <button class="btn-op" onclick="calcAction('%')">%</button>
+            <button class="btn-op" onclick="calcAction('/')">÷</button>
+            <button onclick="calcAction('7')">7</button>
+            <button onclick="calcAction('8')">8</button>
+            <button onclick="calcAction('9')">9</button>
+            <button class="btn-op" onclick="calcAction('*')">×</button>
+            <button onclick="calcAction('4')">4</button>
+            <button onclick="calcAction('5')">5</button>
+            <button onclick="calcAction('6')">6</button>
+            <button class="btn-op" onclick="calcAction('-')">-</button>
+            <button onclick="calcAction('1')">1</button>
+            <button onclick="calcAction('2')">2</button>
+            <button onclick="calcAction('3')">3</button>
+            <button class="btn-op" onclick="calcAction('+')">+</button>
+            <button onclick="calcAction('0')" style="grid-column: span 2;">0</button>
+            <button onclick="calcAction('.')">.</button>
+            <button class="btn-op" onclick="calcAction('=')">=</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let amount = "0", expression = "0", base = "IQD", rates = {};
+
+    const db = [
+        { code: "IQD", name: "العراق", flag: "iq" }, { code: "USD", name: "أمريكا", flag: "us" }, { code: "EUR", name: "أوروبا", flag: "eu" },
+        { code: "SAR", name: "السعودية", flag: "sa" }, { code: "AED", name: "الإمارات", flag: "ae" }, { code: "EGP", name: "مصر", flag: "eg" },
+        { code: "TRY", name: "تركيا", flag: "tr" }, { code: "KWD", name: "الكويت", flag: "kw" }, { code: "QAR", name: "قطر", flag: "qa" },
+        { code: "JOD", name: "الأردن", flag: "jo" }, { code: "OMR", name: "عمان", flag: "om" }, { code: "BHD", name: "البحرين", flag: "bh" },
+        { code: "MAD", name: "المغرب", flag: "ma" }, { code: "DZD", name: "الجزائر", flag: "dz" }, { code: "LYD", name: "ليبيا", flag: "ly" },
+        { code: "LBP", name: "لبنان", flag: "lb" }, { code: "SYP", name: "سوريا", flag: "sy" }, { code: "YER", name: "اليمن", flag: "ye" },
+        { code: "SDG", name: "السودان", flag: "sd" }, { code: "TND", name: "تونس", flag: "tn" }, { code: "CNY", name: "الصين", flag: "cn" },
+        { code: "JPY", name: "اليابان", flag: "jp" }, { code: "GBP", name: "بريطانيا", flag: "gb" }, { code: "RUB", name: "روسيا", flag: "ru" },
+        { code: "CAD", name: "كندا", flag: "ca" }, { code: "AUD", name: "أستراليا", flag: "au" }, { code: "CHF", name: "سويسرا", flag: "ch" },
+        { code: "INR", name: "الهند", flag: "in" }, { code: "BRL", name: "البرازيل", flag: "br" }, { code: "KRW", name: "كوريا الجنوبية", flag: "kr" },
+        { code: "IDR", name: "إندونيسيا", flag: "id" }, { code: "MYR", name: "ماليزيا", flag: "my" }, { code: "MXN", name: "المكسيك", flag: "mx" },
+        { code: "VND", name: "فيتنام", flag: "vn" }, { code: "ZAR", name: "جنوب أفريقيا", flag: "za" }, { code: "AFN", name: "أفغانستان", flag: "af" },
+        { code: "PKR", name: "باكستان", flag: "pk" }, { code: "SEK", name: "السويد", flag: "se" }, { code: "NOK", name: "النرويج", flag: "no" },
+        { code: "DKK", name: "الدنمارك", flag: "dk" }, { code: "PLN", name: "بولندا", flag: "pl" }, { code: "NZD", name: "نيوزيلندا", flag: "nz" },
+        { code: "THB", name: "تايلاند", flag: "th" }, { code: "PHP", name: "الفلبين", flag: "ph" }, { code: "AZN", name: "أذربيجان", flag: "az" },
+        { code: "KZT", name: "كازاخستان", flag: "kz" }, { code: "UZS", name: "أوزبكستان", flag: "uz" }, { code: "GEL", name: "جورجيا", flag: "ge" },
+        { code: "UAH", name: "أوكرانيا", flag: "ua" }, { code: "ARS", name: "الأرجنتين", flag: "ar" }, { code: "CLP", name: "تشيلي", flag: "cl" },
+        { code: "COP", name: "كولومبيا", flag: "co" }, { code: "PEN", name: "بيرو", flag: "pe" }, { code: "UYU", name: "أوروغواي", flag: "uy" },
+        { code: "VES", name: "فنزويلا", flag: "ve" }
+    ];
+
+    async function detectLocation() {
+        try {
+            const loc = await fetch('https://ipapi.co/json/').then(r => r.json());
+            if(loc.currency) base = loc.currency;
+        } catch(e) {}
+        db.sort((a, b) => (a.code === base ? -1 : b.code === base ? 1 : a.code === "USD" ? -1 : b.code === "USD" ? 1 : 0));
+        init();
+    }
+
+    async function init() {
+        try {
+            const res = await fetch(`https://open.er-api.com/v6/latest/${base}`);
+            const data = await res.json();
+            rates = data.rates;
+            document.getElementById('loader').style.display = 'none';
+            renderList();
+        } catch (e) { alert("خطأ في الاتصال بالإنترنت"); }
+    }
+
+    function renderList() {
+        const list = document.getElementById('list');
+        list.innerHTML = db.map(c => `
+            <div class="currency-card ${c.code === base ? 'active' : ''}" id="card-${c.code}" onclick="setBase('${c.code}')">
+                <div class="info">
+                    <div class="flag-capsule"><img src="https://flagcdn.com/${c.flag}.svg" class="flag-img" loading="lazy"></div>
+                    <div class="meta"><span class="code">${c.code}</span><span class="name">${c.name}</span></div>
+                </div>
+                <div class="value" id="val-${c.code}">0</div>
+            </div>
+        `).join('');
+        updateValues();
+    }
+
+    function updateValues() {
+        db.forEach(c => {
+            const el = document.getElementById(`val-${c.code}`);
+            if (el) {
+                const val = c.code === base ? parseFloat(amount) : (parseFloat(amount) * (rates[c.code] || 0));
+                el.innerText = val.toLocaleString(undefined, { maximumFractionDigits: 2 });
+            }
+        });
+    }
+
+    function calcAction(val) {
+        if(val === 'AC') expression = "0";
+        else if(val === 'DEL') expression = expression.length > 1 ? expression.slice(0, -1) : "0";
+        else if(val === '=') {
+            try { expression = eval(expression.replace(/×/g, '*').replace(/÷/g, '/')).toString(); } catch { expression = "0"; }
+        } else {
+            if(expression === "0" && !"+-*/%".includes(val)) expression = val;
+            else expression += val;
+        }
+        document.getElementById('display').innerText = expression;
+        try {
+            let res = eval(expression.replace(/×/g, '*').replace(/÷/g, '/'));
+            if(!isNaN(res)) { amount = res.toString(); updateValues(); }
+        } catch(e) {}
+    }
+
+    function filterList() {
+        const q = document.getElementById('search').value.toLowerCase();
+        db.forEach(c => {
+            const card = document.getElementById(`card-${c.code}`);
+            if(card) card.style.display = (c.name.includes(q) || c.code.toLowerCase().includes(q)) ? 'flex' : 'none';
+        });
+    }
+
+    function toggleCalc(show) {
+        const sheet = document.getElementById('calcSheet');
+        if (show) {
+            sheet.classList.add('show');
+            history.pushState({open:true}, "");
+        } else {
+            sheet.classList.remove('show');
+        }
+    }
+
+    window.onpopstate = () => toggleCalc(false);
+
+    async function setBase(code) {
+        if(base === code) return;
+        base = code; 
+        document.getElementById('loader').style.display = 'flex';
+        await init();
+    }
+
+    window.onload = detectLocation;
+</script>
+</body>
+</html>
